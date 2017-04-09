@@ -53,22 +53,6 @@ parse_ack(AKP* akp, char* buf)
   akp->block_number = (akp->block_number << 8) | buf[3];
 }
 
-void
-htonc(char* buf, char* out, int size)
-{
-  for (int i=0; i<size;i+=2)
-    {
-      uint16_t bb = buf[i];
-      bb  = (bb << 8) | buf[i+1];
-
-      uint16_t nb = htons(bb);
-      out[i] = nb >> 8;
-      out[i+1] = (nb << 8) >> 8;
-
-      printf("%i %c %c\n", nb, out[i], out[i+1]);
-    }
-}
-
 char*
 pack_rrp(int* len, char* filename, char* mode)
 {
