@@ -174,6 +174,18 @@ pack_erp(int* len, int err_code)
   return buf;
 }
 
+void
+parse_erp(ERP* erp, char* buf, int buffer_size)
+{
+  char error_message[MAXBUF];
+  erp->opcode = parse_op(buf);
+  uint16_t ec;
+  ec = buf[2];
+  ec = (ec<< 8) | buf[3];
+  erp->errcode = ec;
+  erp->err_msg = get_error_message((int)ec);
+}
+
 uint16_t
 parse_op(char* buf)
 {

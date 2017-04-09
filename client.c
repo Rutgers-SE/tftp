@@ -28,7 +28,15 @@ main(int argc, char **argv)
                    (SA *)&cp.info, sizeof(cp.info));
   response[n] = '\0';
 
-  printf("This if from the response: %s\n", response);
+  int op = parse_op(response);
+  if (op == 5)
+    {
+      ERP erp;
+      parse_erp(&erp, response, n);
+      printf("Received error from server.\ncode=%i\nmessage=%s\n\n", erp.errcode, erp.err_msg);
+    }
+
+  printf("Closing Connection\n");
   close(cp.descriptor);
 
 

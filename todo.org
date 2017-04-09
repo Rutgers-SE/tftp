@@ -1,5 +1,6 @@
 * TODO Trivial File Transfer Protocol
-** TODO Read and understand the protocol specification (RFC)
+** DONE Read and understand the protocol specification (RFC)
+   CLOSED: [2017-04-09 Sun 12:42]
 ** Implement the connection protocol of a UDP-based TFTP server
 *** Only receive and parse the first connection request packet from a client.
 *** Print out on standard output whether it is a read or write request

@@ -17,25 +17,28 @@ dg_echo(int fd, struct sockaddr_in *sinfo, socklen_t clilen)
 
   while (1)
     {
+      struct sockaddr cad;
+      socklen_t len = sizeof(cad);
+
       char command[MAXBUF];
-      len = clilen;
+      char* response;
+      int response_length;
       printf("Waiting for client\n");
-      n = recvfrom(fd, command, MAXBUF, 0, sinfo, &len);
+      n = recvfrom(fd, command, MAXBUF, 0, &cad, &len);
       command[n] = '\0';
 
       printf("%i bytes received\n", n);
 
       uint16_t op = parse_op(command);
       if (op == OP_RRQ)
-        {
-          ERP erp; // for now we are returning an error
+        { // handling a read request
           RRP rrp;
-          printf("Someone wants to read a file\n");
           parse_rrp(&rrp, command, n);
-          /* pack_erp(&erp, "File Not Found") */
+          printf("Read Request [filename=%s] [mode=%s]\n", rrp.filename, rrp.mode);
+          response = pack_erp(&response_length, 1);
         }
       else if (op == OP_WRQ)
-        {
+        { // handling a write request
           printf("Someone wants to write a file\n");
         }
       else
@@ -43,7 +46,7 @@ dg_echo(int fd, struct sockaddr_in *sinfo, socklen_t clilen)
           printf("Unsupported request\n");
         }
 
-      sendto(fd, msg, n, 0, sinfo, len);
+      sendto(fd, response, response_length, 0, &cad, len);
     }
 }
 

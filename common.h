@@ -34,7 +34,7 @@ struct ErrPack
 {
   uint16_t opcode;
   uint16_t errcode;
-  char err_msg;
+  char *err_msg;
 };
 
 #define RRP struct ReadReqPack
