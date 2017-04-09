@@ -39,7 +39,7 @@ dg_echo(int fd, struct sockaddr_in *sinfo, socklen_t clilen)
                  rrp.filename,
                  rrp.mode,
                  ntohs(cad.sin_port),
-                 parse_ip(&cad));
+                 inet_ntoa(cad.sin_addr));
           response = pack_erp(&response_length, 1);
         }
       else if (op == OP_WRQ)
@@ -50,7 +50,7 @@ dg_echo(int fd, struct sockaddr_in *sinfo, socklen_t clilen)
                  wrp.filename,
                  wrp.mode,
                  ntohs(cad.sin_port),
-                 parse_ip(&cad));
+                 inet_ntoa(cad.sin_addr));
           response = pack_erp(&response_length, 1);
         }
       else

@@ -236,9 +236,3 @@ parse_op(char* buf)
   op = (op << 8) | buf[1];
   return op;
 }
-
-char*
-parse_ip(struct sockaddr_in *client)
-{
-  return inet_ntoa(client->sin_addr);
-}
