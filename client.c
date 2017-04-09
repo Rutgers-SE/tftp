@@ -15,10 +15,10 @@ main(int argc, char **argv)
   char message[MAXBUF] = "This is a test";
   char response[MAXBUF];
   AKP buf;
-  char *ruf;
 
   pack_ack(&buf, 9);
-  int len = pack_rrp(ruf, "awesome", "id");
+  int len;
+  char *ruf = pack_rrp(&len, "awesome", "id");
 
   printf("Sending %i bytes\n", len);
 

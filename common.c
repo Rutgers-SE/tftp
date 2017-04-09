@@ -69,25 +69,25 @@ htonc(char* buf, char* out, int size)
     }
 }
 
-int
-pack_rrp(char* buf, char* filename, char* mode)
+char*
+pack_rrp(int* len, char* filename, char* mode)
 {
-  int len = 2 + // opcode
-    strlen(filename) + // filename
-    1 + // null byte
-    strlen(mode) +
-    1; // null byte
-  buf = malloc(len);
+  *len = 2 +                 // opcode
+    strlen(filename) +          // filename
+    1 +                         // null byte
+    strlen(mode) +              // mode
+    1;                          // null byte
+  char* buf = malloc(*len);
 
-  *buf++ = OP_RRQ << 8;
-  *buf++ = OP_RRQ;
+  buf[0] = OP_RRQ << 8;
+  buf[1] = OP_RRQ;
 
   strcpy(buf+2, filename);
   buf[2 + strlen(filename)] = 0;
 
   strcpy(buf+3+strlen(filename), mode);
   buf[2+strlen(filename)+1+strlen(mode)] = 0;
-  return len;
+  return buf;
 }
 
 void

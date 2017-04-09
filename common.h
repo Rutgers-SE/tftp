@@ -69,7 +69,7 @@ void parse_ack(AKP* akp, char* buf);
 ERP parse_erp(char* buf);
 uint16_t parse_op(char* buf);
 
-int pack_rrp(char* buf, char* filename, char*mode);
+char* pack_rrp(int* buf, char* filename, char*mode);
 void parse_rrp(RRP* rrp, char* buf, int buffer_size);
 
 
