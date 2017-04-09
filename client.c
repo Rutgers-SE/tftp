@@ -36,7 +36,9 @@ main(int argc, char **argv)
     {
       ERP erp;
       parse_erp(&erp, response, n);
-      printf("Error from server.\ncode=%i\nmessage=%s\n\n", erp.errcode, erp.err_msg);
+      printf("Error from server.\n\tcode=%i\n\tmessage=%s\n\n",
+             erp.errcode,
+             erp.err_msg);
     }
 
   printf("Closing Connection\n");
