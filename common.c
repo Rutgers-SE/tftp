@@ -96,49 +96,82 @@ parse_rrp(RRP* rrp, char* buf, int size)
   char filename[MAXBUF];
   char mode[MAXBUF];
   int nxt;
-  rrp->opcode = parse_op(buf);
 
-  printf("%i\n%i\n", rrp->opcode, size);
-
+  // THIS LOOP GETS THE FILENAME
+  int mi = 0;
   for (int i = 2; i < size; i++)
     if (buf[i] != '\0')
       {
-        printf("Character[%i] %c %i\n", i, buf[i], buf[i]);
-        filename[i] = buf[i];
+        /* printf("Character[%i] %c %i\n", i, buf[i], buf[i]); */
+        filename[mi] = buf[i];
+        mi++;
       }
     else
       {
-        printf("Reached NULL character at %i\n", i);
-        nxt = i;
-        filename[i] = '\0';
+        /* printf("Reached NULL character at %i\n", i); */
+        filename[mi] = '\0';
+        nxt = i+1;
         break;
       }
 
-  printf("%s\n", filename);
 
-  int mi = 0;
-
+  // THIS LOOP GETS THE MODE
+  mi = 0;
   for (int i = nxt; i < size; i++)
     if (buf[i] != '\0')
       {
-        printf("Character[%i] %c %i\n", i, buf[i], buf[i]);
+        /* printf("Character[%i] %c %i\n", i, buf[i], buf[i]); */
         mode[mi] = buf[i];
         mi++;
       }
     else
       {
-        printf("Reached NULL character at %i\n", i);
+        /* printf("Reached NULL character at %i\n", i); */
         mode[mi] = '\0';
         break;
       }
 
-  printf("%s\n", mode);
+  rrp->opcode = parse_op(buf);
+  rrp->filename = filename;
+  rrp->mode = mode;
 }
 
-
-ERP
-parse_erp(char* buf)
+char*
+get_error_message(int err_code)
 {
+  switch (err_code)
+    {
+    case 0:
+      return "Not defined.";
+    case 1:
+      return "File not found.";
+    case 2:
+      return "Access violation.";
+    case 3:
+      return "Disk full or allocation exceeded.";
+    case 4:
+      return "Illegal TFTP operation.";
+    default:
+      exit(1);
+    }
+}
+
+char*
+pack_erp(int* len, int err_code)
+{
+  char* error_message = get_error_message(err_code);
+  *len = 2 + // op code
+    2 + // error code
+    strlen(error_message) +  // string len
+    1; // null byte
+
+  char* buf = malloc(*len);
+  buf[0] = 0;
+  buf[1] = 5;
+  buf[2] = 0;
+  buf[3] = err_code;
+  strcpy(buf+4, error_message);
+  return buf;
 }
 
 uint16_t

@@ -64,12 +64,14 @@ struct DataPack
 struct ConPair
 create_udp_socket(int port);
 char *create_write_request_packet(char*, char*);
+uint16_t parse_op(char* buf);
 void pack_ack(AKP* buf, uint16_t block_number);
 void parse_ack(AKP* akp, char* buf);
-ERP parse_erp(char* buf);
-uint16_t parse_op(char* buf);
 
-char* pack_rrp(int* buf, char* filename, char*mode);
+char* pack_erp(int* len, int err_code);
+void parse_erp(ERP* erp, char* buf, int buffer_size);
+
+char* pack_rrp(int* len, char* filename, char*mode);
 void parse_rrp(RRP* rrp, char* buf, int buffer_size);
 
 
