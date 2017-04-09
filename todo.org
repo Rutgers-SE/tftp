@@ -1,0 +1,9 @@
+* TODO Trivial File Transfer Protocol
+** TODO Read and understand the protocol specification (RFC)
+** Implement the connection protocol of a UDP-based TFTP server
+*** Only receive and parse the first connection request packet from a client.
+*** Print out on standard output whether it is a read or write request
+    - Print Filename
+    - Print which mode is requested
+    - Print the IP address and port number from which the request was received.
+*** Return an error packet with the 'File not found' code to the client
