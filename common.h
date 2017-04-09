@@ -74,5 +74,7 @@ void parse_erp(ERP* erp, char* buf, int buffer_size);
 char* pack_rrp(int* len, char* filename, char*mode);
 void parse_rrp(RRP* rrp, char* buf, int buffer_size);
 
+char*
+parse_ip(struct sockaddr_in *client);
 
 #endif

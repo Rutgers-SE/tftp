@@ -17,7 +17,7 @@ dg_echo(int fd, struct sockaddr_in *sinfo, socklen_t clilen)
 
   while (1)
     {
-      struct sockaddr cad;
+      struct sockaddr_in cad;
       socklen_t len = sizeof(cad);
 
       char command[MAXBUF];
@@ -34,7 +34,12 @@ dg_echo(int fd, struct sockaddr_in *sinfo, socklen_t clilen)
         { // handling a read request
           RRP rrp;
           parse_rrp(&rrp, command, n);
-          printf("Read Request [filename=%s] [mode=%s]\n", rrp.filename, rrp.mode);
+
+          printf("Read Request.\n\tfilename=%s\n\tmode=%s\n\tport=%i\n\tip=%s\n",
+                 rrp.filename,
+                 rrp.mode,
+                 ntohs(cad.sin_port),
+                 parse_ip(&cad));
           response = pack_erp(&response_length, 1);
         }
       else if (op == OP_WRQ)
