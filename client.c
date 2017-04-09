@@ -12,8 +12,9 @@ main(int argc, char **argv)
 {
   struct ConPair cp = create_udp_socket(10001);
 
-  int len;
+  int len, lenw;
   char *ruf = pack_rrp(&len, "awesome", "id");
+  char *wuf = pack_wrp(&lenw, "another", "test");
 
   char response[MAXBUF];
 
@@ -40,6 +41,29 @@ main(int argc, char **argv)
              erp.errcode,
              erp.err_msg);
     }
+
+
+  printf("Sending %i bytes\n", lenw);
+  sendto(cp.descriptor, wuf, lenw, 0, (SA*)&cp.info, sizeof(cp.info));
+  nn=0;
+  n = recvfrom(cp.descriptor, response, MAXBUF, 0,
+                   (SA *)&cp.info,
+                   &nn
+                   // sizeof(cp.info)
+                   );
+  response[nn] = '\0';
+  printf("Received %i bytes\n", nn);
+  op = parse_op(response);
+  if (op == 5)
+    {
+      ERP erp;
+      parse_erp(&erp, response, n);
+      printf("Error from server.\n\tcode=%i\n\tmessage=%s\n\n",
+             erp.errcode,
+             erp.err_msg);
+    }
+
+
 
   printf("Closing Connection\n");
   close(cp.descriptor);

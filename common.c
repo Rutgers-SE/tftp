@@ -134,7 +134,80 @@ parse_rrp(RRP* rrp, char* buf, int size)
   rrp->opcode = parse_op(buf);
   rrp->filename = filename;
   rrp->mode = mode;
+
 }
+
+
+
+char*
+pack_wrp(int* len, char* filename, char* mode)
+{
+  *len = 2 +                 // opcode
+    strlen(filename) +          // filename
+    1 +                         // null byte
+    strlen(mode) +              // mode
+    1;                          // null byte
+  char* buf = malloc(*len);
+
+  buf[0] = OP_WRQ << 8;
+  buf[1] = OP_WRQ;
+
+  strcpy(buf+2, filename);
+  buf[2 + strlen(filename)] = 0;
+
+  strcpy(buf+3+strlen(filename), mode);
+  buf[2+strlen(filename)+1+strlen(mode)] = 0;
+  return buf;
+}
+
+void
+parse_wrp(WRP* wrp, char* buf, int size)
+{
+  char filename[MAXBUF];
+  char mode[MAXBUF];
+  int nxt;
+
+  // THIS LOOP GETS THE FILENAME
+  int mi = 0;
+  for (int i = 2; i < size; i++)
+    if (buf[i] != '\0')
+      {
+        /* printf("Character[%i] %c %i\n", i, buf[i], buf[i]); */
+        filename[mi] = buf[i];
+        mi++;
+      }
+    else
+      {
+        /* printf("Reached NULL character at %i\n", i); */
+        filename[mi] = '\0';
+        nxt = i+1;
+        break;
+      }
+
+
+  // THIS LOOP GETS THE MODE
+  mi = 0;
+  for (int i = nxt; i < size; i++)
+    if (buf[i] != '\0')
+      {
+        /* printf("Character[%i] %c %i\n", i, buf[i], buf[i]); */
+        mode[mi] = buf[i];
+        mi++;
+      }
+    else
+      {
+        /* printf("Reached NULL character at %i\n", i); */
+        mode[mi] = '\0';
+        break;
+      }
+
+  wrp->opcode = parse_op(buf);
+  wrp->filename = filename;
+  wrp->mode = mode;
+}
+
+
+
 
 char*
 get_error_message(int err_code)

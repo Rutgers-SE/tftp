@@ -44,7 +44,14 @@ dg_echo(int fd, struct sockaddr_in *sinfo, socklen_t clilen)
         }
       else if (op == OP_WRQ)
         { // handling a write request
-          printf("Someone wants to write a file\n");
+          WRP wrp;
+          parse_wrp(&wrp, command, n);
+          printf("Write Request.\n\tfilename=%s\n\tmode=%s\n\tport=%i\n\tip=%s\n",
+                 wrp.filename,
+                 wrp.mode,
+                 ntohs(cad.sin_port),
+                 parse_ip(&cad));
+          response = pack_erp(&response_length, 1);
         }
       else
         {
