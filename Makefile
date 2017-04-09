@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -Wall -g
+CFLAGS = -g
 
 CLIENT_OBJS = client.o common.o
 SERVER_OBJS = server.o common.o
