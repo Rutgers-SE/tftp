@@ -27,21 +27,6 @@ create_udp_socket(int port)
   return cp;
 }
 
-char
-*create_write_packet(char* filename, char* mode)
-{
-  char *buf = malloc(4 + strlen(filename) + strlen(mode) + 2);
-}
-
-
-// composes ACK packet and puts it into buffer
-void
-pack_ack(AKP* buf, uint16_t block_number)
-{
-  buf->opcode = htons(OP_ACK);
-  buf->block_number = htons(block_number);
-}
-
 // returns block number from ACK
 void
 parse_ack(AKP* akp, char* buf)
@@ -257,4 +242,3 @@ parse_ip(struct sockaddr_in *client)
 {
   return inet_ntoa(client->sin_addr);
 }
-
