@@ -65,8 +65,14 @@ dg_echo(int fd, struct sockaddr_in *sinfo, socklen_t clilen)
 int
 main(int argc, char **argv)
 {
-  struct ConPair cp = create_udp_socket(10001);
+  int port = 10001;
+  if (argc >= 2)
+    {
+      port = atoi(argv[1]);
+    }
+  struct ConPair cp = create_udp_socket(port);
   bind(cp.descriptor, (SA *)&cp.info, sizeof(cp.info));
+  printf("Created UDP socket on %d.\n", port);
 
   dg_echo(cp.descriptor, (struct sockaddr_in *)&cp.info, sizeof(cp.info));
 
