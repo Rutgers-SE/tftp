@@ -68,7 +68,8 @@ parse_rrp(RRP* rrp, char* buf, int size)
 
   // THIS LOOP GETS THE FILENAME
   int mi = 0;
-  for (int i = 2; i < size; i++)
+  int i;
+  for (i = 2; i < size; i++)
     if (buf[i] != '\0')
       {
         /* printf("Character[%i] %c %i\n", i, buf[i], buf[i]); */
@@ -86,7 +87,7 @@ parse_rrp(RRP* rrp, char* buf, int size)
 
   // THIS LOOP GETS THE MODE
   mi = 0;
-  for (int i = nxt; i < size; i++)
+  for (i = nxt; i < size; i++)
     if (buf[i] != '\0')
       {
         /* printf("Character[%i] %c %i\n", i, buf[i], buf[i]); */
@@ -138,7 +139,8 @@ parse_wrp(WRP* wrp, char* buf, int size)
 
   // THIS LOOP GETS THE FILENAME
   int mi = 0;
-  for (int i = 2; i < size; i++)
+  int i;
+  for (i = 2; i < size; i++)
     if (buf[i] != '\0')
       {
         /* printf("Character[%i] %c %i\n", i, buf[i], buf[i]); */
@@ -156,7 +158,7 @@ parse_wrp(WRP* wrp, char* buf, int size)
 
   // THIS LOOP GETS THE MODE
   mi = 0;
-  for (int i = nxt; i < size; i++)
+  for (i = nxt; i < size; i++)
     if (buf[i] != '\0')
       {
         /* printf("Character[%i] %c %i\n", i, buf[i], buf[i]); */
