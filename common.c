@@ -193,7 +193,6 @@ pack_dat(int* len, int block_number, char* data, int data_len)
 
   strncpy(buf+4, data, data_len); // could use mem copy for binary files
 
-  buf[*len-1] = 0;
   return buf;
 }
 
@@ -267,15 +266,18 @@ send_data_packet(int fd, int block_number, char* data, size_t size, SAI* cad, so
 
   char *dat = pack_dat(&packet_size, block_number, data, size);
 
+  int attempt_count = 10;
+
   do
     {
       sendto(fd, dat, packet_size, 0, cad, cadlen);
       n = recvfrom(fd, resp, MAXBUF, 0, cad, &cadlen);
       op = parse_op(resp);
+      if (attempt_count-- == 0) break;
     }
   while (op != OP_ACK);
 
   // return 0; on success
 
-  return 1;
+  return 0;
 }

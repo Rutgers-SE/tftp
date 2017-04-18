@@ -45,33 +45,34 @@ dg_echo(int fd, struct sockaddr_in *sinfo, socklen_t clilen)
                  inet_ntoa(cad.sin_addr));
 
           FILE *tf = fopen(rrp.filename, "rb");
-          fseek(tf, 0, SEEK_END);
-          long file_size = ftell(tf);
-          fseek(tf, 0, SEEK_SET);
+          if (tf == NULL)
+            {
+              printf("File Does not Exist");
+              break;
+            }
 
-          /* response = pack_erp(&response_length, 1); */
-          char on_hand_data[512];
           char buf[512];
           int block_number = 1;
-          int sent_status = 0;
           while (1)
             {
               int bytes_read;
               if ((bytes_read = fread(buf, 1, 512, tf)) == 0)
                 {
-                  // I think i have to send an error here.
                   fclose(tf);
                   break;
                 }
-              memcpy(on_hand_data, buf, bytes_read);
-              sent_status = send_data_packet(fd,
-                                             block_number,
-                                             buf,
-                                             bytes_read,
-                                             (SAI*)&cad,
-                                             len);
+              if (send_data_packet(fd,
+                                   block_number,
+                                   buf,
+                                   bytes_read,
+                                   (SAI*)&cad,
+                                   len))
+                {
+                  printf("Transfer Failed");
+                  break;
+                }
+              printf("Sent Block #%i\n", block_number);
               block_number++;
-              printf("Sent Data Packet\n");
             }
         }
       else if (op == OP_WRQ)
