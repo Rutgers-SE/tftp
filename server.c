@@ -1,12 +1,15 @@
-#include <stdlib.h>
-#include <sys/types.h>
-#include <sys/socket.h>
 #include <arpa/inet.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <strings.h>
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+
+
 #include "common.h"
-
-
 
 void
 dg_echo(int fd, struct sockaddr_in *sinfo, socklen_t clilen)
@@ -24,7 +27,7 @@ dg_echo(int fd, struct sockaddr_in *sinfo, socklen_t clilen)
       char* response;
       int response_length;
       printf("Waiting for client\n");
-      n = recvfrom(fd, command, MAXBUF, 0, &cad, &len);
+      n = recvfrom(fd, command, MAXBUF, 0, (SAI*)&cad, &len);
       command[n] = '\0';
 
       printf("%i bytes received\n", n);
@@ -40,7 +43,36 @@ dg_echo(int fd, struct sockaddr_in *sinfo, socklen_t clilen)
                  rrp.mode,
                  ntohs(cad.sin_port),
                  inet_ntoa(cad.sin_addr));
-          response = pack_erp(&response_length, 1);
+
+          FILE *tf = fopen(rrp.filename, "rb");
+          fseek(tf, 0, SEEK_END);
+          long file_size = ftell(tf);
+          fseek(tf, 0, SEEK_SET);
+
+          /* response = pack_erp(&response_length, 1); */
+          char on_hand_data[512];
+          char buf[512];
+          int block_number = 1;
+          int sent_status = 0;
+          while (1)
+            {
+              int bytes_read;
+              if ((bytes_read = fread(buf, 1, 512, tf)) == 0)
+                {
+                  // I think i have to send an error here.
+                  fclose(tf);
+                  break;
+                }
+              memcpy(on_hand_data, buf, bytes_read);
+              sent_status = send_data_packet(fd,
+                                             block_number,
+                                             buf,
+                                             bytes_read,
+                                             (SAI*)&cad,
+                                             len);
+              block_number++;
+              printf("Sent Data Packet\n");
+            }
         }
       else if (op == OP_WRQ)
         { // handling a write request
@@ -52,13 +84,13 @@ dg_echo(int fd, struct sockaddr_in *sinfo, socklen_t clilen)
                  ntohs(cad.sin_port),
                  inet_ntoa(cad.sin_addr));
           response = pack_erp(&response_length, 1);
+          sendto(fd, response, response_length, 0, (SAI*)&cad, len);
         }
       else
         {
           printf("Unsupported request\n");
         }
 
-      sendto(fd, response, response_length, 0, &cad, len);
     }
 }
 
@@ -71,7 +103,7 @@ main(int argc, char **argv)
       port = atoi(argv[1]);
     }
   struct ConPair cp = create_udp_socket(port);
-  bind(cp.descriptor, (SA *)&cp.info, sizeof(cp.info));
+  bind(cp.descriptor, (SAI *)&cp.info, sizeof(cp.info));
   printf("Created UDP socket on %d.\n", port);
 
   dg_echo(cp.descriptor, (struct sockaddr_in *)&cp.info, sizeof(cp.info));

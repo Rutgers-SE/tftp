@@ -7,6 +7,7 @@
 #include <stdint.h>
 #include <strings.h>
 #include <string.h>
+#include <sys/select.h>
 
 
 struct ConPair
@@ -48,7 +49,7 @@ pack_rrp(int* len, char* filename, char* mode)
     1;                          // null byte
   char* buf = malloc(*len);
 
-  buf[0] = OP_RRQ << 8;
+  buf[0] = OP_RRQ >> 8;
   buf[1] = OP_RRQ;
 
   strcpy(buf+2, filename);
@@ -119,7 +120,7 @@ pack_wrp(int* len, char* filename, char* mode)
     1;                          // null byte
   char* buf = malloc(*len);
 
-  buf[0] = OP_WRQ << 8;
+  buf[0] = OP_WRQ >> 8;
   buf[1] = OP_WRQ;
 
   strcpy(buf+2, filename);
@@ -135,7 +136,7 @@ parse_wrp(WRP* wrp, char* buf, int size)
 {
   char filename[MAXBUF];
   char mode[MAXBUF];
-  int nxt;
+  int nxt=0;
 
   // THIS LOOP GETS THE FILENAME
   int mi = 0;
@@ -178,6 +179,23 @@ parse_wrp(WRP* wrp, char* buf, int size)
 }
 
 
+char*
+pack_dat(int* len, int block_number, char* data, int data_len)
+{
+  *len = 2 // op
+    + 2 // block number
+    + data_len;
+  char *buf = malloc(*len);
+  buf[0]=0;
+  buf[1]=OP_DAT;
+  buf[2]=block_number>>8;
+  buf[3]=block_number;
+
+  strncpy(buf+4, data, data_len); // could use mem copy for binary files
+
+  buf[*len-1] = 0;
+  return buf;
+}
 
 
 char*
@@ -221,11 +239,10 @@ pack_erp(int* len, int err_code)
 void
 parse_erp(ERP* erp, char* buf, int buffer_size)
 {
-  char error_message[MAXBUF];
   erp->opcode = parse_op(buf);
   uint16_t ec;
   ec = buf[2];
-  ec = (ec<< 8) | buf[3];
+  ec = (ec<<8)|buf[3];
   erp->errcode = ec;
   erp->err_msg = get_error_message((int)ec);
 }
@@ -235,6 +252,30 @@ parse_op(char* buf)
 {
   uint16_t op;
   op = buf[0];
-  op = (op << 8) | buf[1];
+  op = (op<<8)|buf[1];
   return op;
+}
+
+int
+send_data_packet(int fd, int block_number, char* data, size_t size, SAI* cad, socklen_t cadlen)
+{
+  // send packet to file descriptor
+  char resp[MAXBUF];
+  int op, n;
+
+  int packet_size;
+
+  char *dat = pack_dat(&packet_size, block_number, data, size);
+
+  do
+    {
+      sendto(fd, dat, packet_size, 0, cad, cadlen);
+      n = recvfrom(fd, resp, MAXBUF, 0, cad, &cadlen);
+      op = parse_op(resp);
+    }
+  while (op != OP_ACK);
+
+  // return 0; on success
+
+  return 1;
 }

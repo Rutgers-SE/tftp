@@ -5,6 +5,7 @@
 #include <sys/socket.h>
 
 #define SA struct sockaddr_in
+#define SAI struct sockaddr
 #define MAXBUF 8192
 #define MAX_STRING_LEN 8192
 #define OP_RRQ 1
@@ -76,5 +77,8 @@ void parse_rrp(RRP* rrp, char* buf, int buffer_size);
 
 char* pack_wrp(int* len, char* filename, char*mode);
 void parse_wrp(WRP* wrp, char* buf, int buffer_size);
+
+// transmission
+int send_data_packet(int fd, int block_number, char* data, size_t size, SAI* cad, socklen_t cadlen);
 
 #endif

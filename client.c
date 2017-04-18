@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <strings.h>
 #include <string.h>
+#include <unistd.h>
 #include "common.h"
 
 int
@@ -13,7 +14,7 @@ main(int argc, char **argv)
   struct ConPair cp = create_udp_socket(10001);
 
   int len, lenw;
-  char *ruf = pack_rrp(&len, "awesome", "id");
+  char *ruf = pack_rrp(&len, "protocol", "ascii");
   char *wuf = pack_wrp(&lenw, "another", "test");
 
   char response[MAXBUF];
@@ -21,11 +22,11 @@ main(int argc, char **argv)
 
   printf("Sending %i bytes\n", len);
 
-  sendto(cp.descriptor, ruf, len, 0, (SA*)&cp.info, sizeof(cp.info));
+  sendto(cp.descriptor, ruf, len, 0, (SAI*)&cp.info, sizeof(cp.info));
 
   int nn;
   int n = recvfrom(cp.descriptor, response, MAXBUF, 0,
-                   (SA *)&cp.info,
+                   (SAI *)&cp.info,
                    &nn
                    // sizeof(cp.info)
                    );
@@ -44,10 +45,10 @@ main(int argc, char **argv)
 
 
   printf("Sending %i bytes\n", lenw);
-  sendto(cp.descriptor, wuf, lenw, 0, (SA*)&cp.info, sizeof(cp.info));
+  sendto(cp.descriptor, wuf, lenw, 0, (SAI*)&cp.info, sizeof(cp.info));
   nn=0;
   n = recvfrom(cp.descriptor, response, MAXBUF, 0,
-                   (SA *)&cp.info,
+                   (SAI*)&cp.info,
                    &nn
                    // sizeof(cp.info)
                    );
