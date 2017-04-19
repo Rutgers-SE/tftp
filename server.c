@@ -8,6 +8,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <sys/select.h>
+#include <unistd.h>
 
 
 #include "common.h"
@@ -16,6 +17,31 @@ fd_set rfds;
 struct timeval tv;
 int retval;
 
+struct Transfer
+{
+  struct sockaddr_in info;
+  int desc;
+  int block_number;
+  char filename[256];
+  FILE* fdesc;
+};
+
+struct Transfer transfers[12];
+int btid = 0; // % 12
+
+int
+register_client_transfer(int cid, SA info, char filename[256], FILE* fdesc)
+{
+  FD_SET(cid, &rfds);
+  transfers[btid].info = info;
+  transfers[btid].desc = cid;
+  strcpy(transfers[btid].filename, filename);
+  transfers[btid].fdesc = fdesc;
+
+  btid = (btid+1)%12;
+
+  return 1; // error
+}
 
 int
 handle_read_request(int fd, char* command, int n, struct sockaddr_in cad, size_t len)
@@ -27,6 +53,7 @@ handle_read_request(int fd, char* command, int n, struct sockaddr_in cad, size_t
 
   parse_rrp(&rrp, command, n);
 
+
   printf("Read Request.\n\tfilename=%s\n\tmode=%s\n\tport=%i\n\tip=%s\n",
          rrp.filename,
          rrp.mode,
@@ -37,6 +64,8 @@ handle_read_request(int fd, char* command, int n, struct sockaddr_in cad, size_t
   fseek(tf, 0, SEEK_END);
   int file_size = ftell(tf);
   fseek(tf, 0, SEEK_SET);
+
+  /* register_client_transfer(fd, *((SA*)&cad), command, tf); */
 
   /* int total_sends = file_size / 512; */
   int total_sends = ((file_size + (512/2)) / 512)+1;
@@ -65,8 +94,8 @@ handle_read_request(int fd, char* command, int n, struct sockaddr_in cad, size_t
           return 1;
         }
       int percent_complete = ((float)block_number/(float)total_sends) * (float)100;
-      printf("%c[2K", 27);
       printf("(%i\%)\n", percent_complete);
+      printf("%c[2K", 27);
       block_number++;
     }
   return 0;
@@ -77,17 +106,35 @@ void
 dg_echo(int fd, struct sockaddr_in *sinfo, socklen_t clilen)
 {
   int n;
-  socklen_t len;
 
   while (1)
     {
+      FD_ZERO(&rfds);
+      FD_SET(fd, &rfds);
+      tv.tv_sec = 1; // only wait one second
+      tv.tv_usec = 0;
       struct sockaddr_in cad;
       socklen_t len = sizeof(cad);
 
       char command[MAXBUF];
       char* response;
       int response_length;
-      printf("Waiting for client\n");
+
+
+      // this is where multiplexing will come into play
+      int sel_status = select(8, &rfds, NULL, NULL, &tv);
+
+      if (sel_status == -1)
+        exit(1);
+      else if (sel_status == 0)
+        {
+          printf(".");
+          fflush(stdout);
+          continue;
+        }
+      // Ending multiplexer code
+      printf("\n");
+
       n = recvfrom(fd, command, MAXBUF, 0, (SAI*)&cad, &len);
       command[n] = '\0';
 
@@ -121,18 +168,12 @@ int
 main(int argc, char **argv)
 {
   // setting up multiplexer
-  FD_ZERO(&rfds);
-
-  tv.tv_sec = 5;
-  tv.tv_usec = 0;
-
-
+  bzero(&transfers, sizeof(transfers));
 
   int port = 10001;
   if (argc >= 2)
-    {
-      port = atoi(argv[1]);
-    }
+    port = atoi(argv[1]);
+
   struct ConPair cp = create_udp_socket(port);
   bind(cp.descriptor, (SAI *)&cp.info, sizeof(cp.info));
   printf("Created UDP socket on %d.\n", port);
