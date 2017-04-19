@@ -191,7 +191,7 @@ pack_dat(int* len, int block_number, char* data, int data_len)
   buf[2]=block_number>>8;
   buf[3]=block_number;
 
-  strncpy(buf+4, data, data_len); // could use mem copy for binary files
+  memcpy(buf+4, data, data_len); // could use mem copy for binary files
 
   return buf;
 }
@@ -268,4 +268,14 @@ send_data_packet(int fd, int block_number, char* data, size_t size, SA* cad, soc
     }
 
   return 0;
+}
+
+int
+get_mode(char* mode_string)
+{
+  if (strstr(mode_string, "binary") == 0)
+    return BINARY;
+  if (strstr(mode_string, "octet") == 0)
+    return BINARY;
+  return ASCII;
 }

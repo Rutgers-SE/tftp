@@ -17,6 +17,7 @@
 #define PROGRESS 1
 #define NEW 2
 
+
 // start multiplexing globals
 fd_set rfds;
 struct timeval tv;
@@ -30,6 +31,7 @@ struct Transfer
   char filename[256];
   int port;
   int status;
+  int mode;
 };
 #define T struct Transfer
 
@@ -53,7 +55,7 @@ transfers_get(int port)
 // precondition: port must be run through ntohs before using this function
 // returns the index of the transfer
 int
-register_client_transfer(char filename[256], int port)
+register_client_transfer(char filename[256], int mode, int port)
 {
   btid = (btid+1)%12; // incrementing the port
   strcpy(transfers[btid].filename, filename);
@@ -125,7 +127,8 @@ handle_read_request(int fd, char* command, int n, SAI cad, size_t len)
       return 1;
     }
 
-  int tid = register_client_transfer(rrp.filename, ntohs(cad.sin_port)); /* NOTE: not sure if I need to do this. */
+  int mode = get_mode(rrp.mode);
+  int tid = register_client_transfer(rrp.filename, mode, ntohs(cad.sin_port)); /* NOTE: not sure if I need to do this. */
 
   if (tid >= 0)
     transfer_block(fd, tid, (SA*)&cad, len);

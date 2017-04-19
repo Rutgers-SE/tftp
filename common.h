@@ -15,6 +15,9 @@
 #define OP_ACK 4
 #define OP_ERR 5
 
+#define ASCII 0
+#define BINARY 1
+
 #pragma pack(1)
 
 
@@ -81,5 +84,7 @@ void parse_wrp(WRP* wrp, char* buf, int buffer_size);
 
 // transmission
 int send_data_packet(int fd, int block_number, char* data, size_t size, SA* cad, socklen_t cadlen);
+
+int get_mode(char* mode_string);
 
 #endif
