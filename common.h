@@ -81,22 +81,3 @@ void parse_wrp(WRP* wrp, char* buf, int buffer_size);
 
 // transmission
 int send_data_packet(int fd, int block_number, char* data, size_t size, SA* cad, socklen_t cadlen);
-
-
-// map implementation
-
-struct
-map
-{
-  void **keys;
-  void **values;
-  int entries;
-  int _size;
-};
-#define Map struct map
-
-void map_init(Map* );
-void map_add(void* key, void* value, Map* m);
-void *map_get(void* key, Map* m);
-
-#endif

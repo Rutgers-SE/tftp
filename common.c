@@ -269,34 +269,3 @@ send_data_packet(int fd, int block_number, char* data, size_t size, SA* cad, soc
 
   return 0;
 }
-
-void
-map_init(Map* m)
-{
-  m = malloc(sizeof(Map));
-  m->_size=0;
-  m->entries = 0;
-}
-
-void
-map_add(void* key, void* value, Map* m)
-{
-  m->keys[m->entries] = key;
-  m->values[m->entries] = value;
-  m->entries++;
-  m->_size++;
-}
-
-void*
-map_get(void* key, Map* m)
-{
-  int i = 0;
-  for (; i < m->_size; i++)
-    {
-      if (m->keys[i] == key)
-        {
-          return m->values[i];
-        }
-    }
-  return NULL;
-}

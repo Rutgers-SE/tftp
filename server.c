@@ -199,14 +199,6 @@ tftp_handler(int fd, struct sockaddr_in *sinfo, socklen_t clilen)
 int
 main(int argc, char **argv)
 {
-  /* Map m; */
-  /* map_init(&m); */
-
-  /* int key = 0; */
-  /* int value = 32; */
-  /* map_add(&key, &value, &m); */
-  /* int fetched_value = *((int*)map_get(&key, &m)); */
-  /* printf("%i\n", fetched_value); */
 
 
   // setting up multiplexer
