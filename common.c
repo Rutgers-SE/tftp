@@ -256,28 +256,47 @@ parse_op(char* buf)
 }
 
 int
-send_data_packet(int fd, int block_number, char* data, size_t size, SAI* cad, socklen_t cadlen)
+send_data_packet(int fd, int block_number, char* data, size_t size, SA* cad, socklen_t cadlen)
 {
   // send packet to file descriptor
-  char resp[MAXBUF];
-  int op, n;
-
   int packet_size;
-
   char *dat = pack_dat(&packet_size, block_number, data, size);
 
-  int attempt_count = 10;
-
-  do
+  if (sendto(fd, dat, packet_size, 0, cad, cadlen) < 0)
     {
-      sendto(fd, dat, packet_size, 0, cad, cadlen);
-      n = recvfrom(fd, resp, MAXBUF, 0, cad, &cadlen);
-      op = parse_op(resp);
-      if (attempt_count-- == 0) break;
+      return 1;
     }
-  while (op != OP_ACK);
-
-  // return 0; on success
 
   return 0;
+}
+
+void
+map_init(Map* m)
+{
+  m = malloc(sizeof(Map));
+  m->_size=0;
+  m->entries = 0;
+}
+
+void
+map_add(void* key, void* value, Map* m)
+{
+  m->keys[m->entries] = key;
+  m->values[m->entries] = value;
+  m->entries++;
+  m->_size++;
+}
+
+void*
+map_get(void* key, Map* m)
+{
+  int i = 0;
+  for (; i < m->_size; i++)
+    {
+      if (m->keys[i] == key)
+        {
+          return m->values[i];
+        }
+    }
+  return NULL;
 }
