@@ -117,18 +117,9 @@ handle_read_request(int fd, char* command, int n, SAI cad, size_t len)
          ntohs(cad.sin_port),
          inet_ntoa(cad.sin_addr));
 
-  if (access(rrp.filename, F_OK) == -1)
-    {
-      int elen;
-      char* erp = pack_erp(&elen, 1);
-      sendto(fd, erp, elen, 0, (SA*)&cad, len);
-      return 1;
-    }
-
   int tid = register_client_transfer(rrp.filename, ntohs(cad.sin_port)); /* NOTE: not sure if I need to do this. */
 
-  if (tid >= 0)
-    transfer_block(fd, tid, (SA*)&cad, len);
+  transfer_block(fd, tid, (SA*)&cad, len);
 
   return tid;
 }
@@ -147,7 +138,7 @@ tftp_handler(int fd, struct sockaddr_in *sinfo, socklen_t clilen)
       tv.tv_sec = 1; // only wait one second
       tv.tv_usec = 0;
 
-      // sleep(1);
+      sleep(1);
       int sel_status = select(8, &rfds, NULL, NULL, &tv);
 
       if (sel_status == -1)
@@ -182,8 +173,7 @@ tftp_handler(int fd, struct sockaddr_in *sinfo, socklen_t clilen)
           parse_ack(&akp, command);
           printf("[Ack block_number=%i]\n", akp.block_number);
           int tid = transfers_get(ntohs(cad.sin_port));
-          if (tid >= 0)
-            transfer_block(fd, tid, (SA*)&cad, len);
+          transfer_block(fd, tid, (SA*)&cad, len);
         }
 
       else if (op == OP_WRQ)

@@ -81,3 +81,5 @@ void parse_wrp(WRP* wrp, char* buf, int buffer_size);
 
 // transmission
 int send_data_packet(int fd, int block_number, char* data, size_t size, SA* cad, socklen_t cadlen);
+
+#endif
