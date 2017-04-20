@@ -96,17 +96,19 @@ get_done_transfer()
 T*
 register_client_transfer(char filename[256], int mode, SAI cinfo, size_t len)
 {
+  // generate a new random port number
   srand(time(NULL));
   int new_port = (rand()%65535)+10000;
-  T* t = get_done_transfer();
-  t->cp = create_udp_socket(new_port);
+
+  T* t = get_done_transfer();   /* get a transfer struct that is marked as done. */
+
+  t->cp = create_udp_socket(new_port); /* create a new socket for the transfer */
   bind(t->cp.descriptor, (SA*)&(t->cp.info), sizeof(t->cp.info));
 
+  // set potential useful information
   strcpy(t->filename, filename);
-
   t->block_number=1;
   t->status=NEW;
-
   t->cinfo = cinfo;
   t->clen = len;
 
@@ -116,17 +118,18 @@ register_client_transfer(char filename[256], int mode, SAI cinfo, size_t len)
 T*
 get_ready_transfer()
 {
-  rotate();
+  rotate();                     /* used to make sure 'fair' use of transfers */
   int selval = select(128, &rfds, NULL, NULL, &tv);
+  //----------------->^^^<-- Don't ask me why
   int i = ts;
 
   if (selval == -1)
-    perror("Select threw an error.");
+    perror("Select threw an error\n");
   else if (selval)
     while (((i+1)%MAXTRAN)!=te)
       {
         if (FD_ISSET(transfers[i].cp.descriptor, &rfds))
-          return (transfers + i);
+          return (transfers+i);
         i=(i+1)%MAXTRAN;
       }
 
@@ -144,7 +147,7 @@ transfer_block(T* tfs)
 
   // Load a check of the file
   FILE* f = fopen(tfs->filename, "rb");
-  int offset = 512*(tfs->block_number-1);
+  int offset = 512*(tfs->block_number-1); /* goto the proper location in the file */
   fseek(f, offset, SEEK_SET);
   bytes_read = fread(buf, 1, 512, f);
   if (bytes_read <= 0)
@@ -152,7 +155,7 @@ transfer_block(T* tfs)
       printf("(%i->%i) [DONE]\n", tfs->cp.descriptor, tfs->cinfo.sin_port);
       tfs->status = DONE;       /* mark transfer as done */
       close(tfs->cp.descriptor);
-      FD_CLR(tfs->cp.descriptor, &rfds);
+      /* FD_CLR(tfs->cp.descriptor, &rfds); */
       return -1;
     }
   fclose(f);
@@ -225,9 +228,6 @@ tftp_handler(int fd, struct sockaddr_in *sinfo, socklen_t clilen)
       tv.tv_sec = 1;            /* reset the timer for transfers */
       tv.tv_usec = 0;
 
-      printf(".");
-      fflush(stdout);
-
       struct sockaddr_in cad;
       socklen_t len = sizeof(cad);
       char command[MAXBUF];
@@ -251,12 +251,6 @@ tftp_handler(int fd, struct sockaddr_in *sinfo, socklen_t clilen)
           command[n] = '\0';
           /* printf("%i bytes received from port %i\n", n, ntohs(cad.sin_port)); */
         }
-
-
-      printf("\n");
-
-
-
 
       uint16_t op = parse_op(command);
       if (op == OP_RRQ)
