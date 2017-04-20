@@ -158,6 +158,7 @@ transfer_block(T* tfs)
       close(tfs->cp.descriptor);
       FD_CLR(tfs->cp.descriptor, &rfds);
       bzero(tfs, sizeof(*tfs));
+      fclose(f);
       return -1;
     }
   fclose(f);
