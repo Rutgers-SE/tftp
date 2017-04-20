@@ -262,6 +262,10 @@ send_data_packet(int fd, int block_number, char* data, size_t size, SA* cad, soc
   int packet_size;
   char *dat = pack_dat(&packet_size, block_number, data, size);
 
+  printf("BlN(%i)\t-->\t[FD(%i)\tPORT(%i)]\n",
+         block_number,
+         fd,
+         ntohs(((SAI*)cad)->sin_port));
   if (sendto(fd, dat, packet_size, 0, cad, cadlen) < 0)
     {
       return 1;

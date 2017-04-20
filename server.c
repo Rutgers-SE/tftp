@@ -153,7 +153,7 @@ transfer_block(T* tfs)
   bytes_read = fread(buf, 1, 512, f);
   if (bytes_read <= 0)
     {
-      printf("(%i->%i) [DONE]\n", tfs->cp.descriptor, tfs->cinfo.sin_port);
+      printf("(%i\t%i)\t[DONE]\n", tfs->cp.descriptor, tfs->cinfo.sin_port);
       tfs->status = DONE;       /* mark transfer as done */
       close(tfs->cp.descriptor);
       FD_CLR(tfs->cp.descriptor, &rfds);
@@ -186,11 +186,11 @@ handle_read_request(int fd, char* command, int n, SAI cad, size_t len)
   RRP rrp;
   parse_rrp(&rrp, command, n);
 
-  printf("[Read Request filename=%s mode=%s port=%i tip=%s]\n",
-         rrp.filename,
-         rrp.mode,
+  printf("RRQ()\t<--\t[FD(%i)\tPORT(%i)\t%s\t%s]\n",
+         fd,
          ntohs(cad.sin_port),
-         inet_ntoa(cad.sin_addr));
+         rrp.filename,
+         rrp.mode);
 
   if (access(rrp.filename, F_OK) == -1)
     {
@@ -264,6 +264,13 @@ tftp_handler(int fd, struct sockaddr_in *sinfo, socklen_t clilen)
           if (t == NULL) continue;
           AKP akp;
           parse_ack(&akp, command);
+
+          /* printf("ACK(%i)\t<--\t[]\n", */
+          /*        akp.block_number); */
+          printf("ACK(%i)\t<--\t[FD(%i)\tPORT(%i)]\n",
+                 akp.block_number,
+                 fd,
+                 ntohs(cad.sin_port));
 
           // increment the block number if recv.
           if (akp.block_number == t->block_number)
