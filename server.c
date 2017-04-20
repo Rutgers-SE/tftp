@@ -128,7 +128,8 @@ get_ready_transfer()
   else if (selval)
     while (((i+1)%MAXTRAN)!=te)
       {
-        if (FD_ISSET(transfers[i].cp.descriptor, &rfds))
+        if (FD_ISSET(transfers[i].cp.descriptor, &rfds) &&
+            transfers[i].status != DONE)
           return (transfers+i);
         i=(i+1)%MAXTRAN;
       }
@@ -155,7 +156,8 @@ transfer_block(T* tfs)
       printf("(%i->%i) [DONE]\n", tfs->cp.descriptor, tfs->cinfo.sin_port);
       tfs->status = DONE;       /* mark transfer as done */
       close(tfs->cp.descriptor);
-      /* FD_CLR(tfs->cp.descriptor, &rfds); */
+      FD_CLR(tfs->cp.descriptor, &rfds);
+      bzero(tfs, sizeof(*tfs));
       return -1;
     }
   fclose(f);
@@ -240,7 +242,6 @@ tftp_handler(int fd, struct sockaddr_in *sinfo, socklen_t clilen)
             {
               n = recvfrom(fd, command, MAXBUF, 0, (SA*)&cad, &len);
               command[n] = '\0';
-              /* printf("%i bytes received from port %i\n", n, ntohs(cad.sin_port)); */
             }
           else
             continue;
@@ -249,7 +250,6 @@ tftp_handler(int fd, struct sockaddr_in *sinfo, socklen_t clilen)
         {
           n = recvfrom(t->cp.descriptor, command, MAXBUF, 0, (SA*)&cad, &len);
           command[n] = '\0';
-          /* printf("%i bytes received from port %i\n", n, ntohs(cad.sin_port)); */
         }
 
       uint16_t op = parse_op(command);
@@ -260,13 +260,18 @@ tftp_handler(int fd, struct sockaddr_in *sinfo, socklen_t clilen)
 
       else if (op == OP_ACK)
         {
+          if (t == NULL) continue;
           AKP akp;
           parse_ack(&akp, command);
-          /* printf("[Ack block_number=%i]\n", akp.block_number); */
+
+          // increment the block number if recv.
           if (akp.block_number == t->block_number)
             t->block_number++;
-          if (t != NULL)
-            transfer_block(t);
+          else if (akp.block_number < t->block_number)
+            t->block_number--;
+
+          // transfer a block
+          transfer_block(t);
         }
 
       else if (op == OP_WRQ)
