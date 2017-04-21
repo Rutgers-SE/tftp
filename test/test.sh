@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 
 
-./Tftp localhost 10001 -c get files/a &
-./Tftp localhost 10001 -c get files/b &
-./Tftp localhost 10001 -c get files/c &
-./Tftp localhost 10001 -c get files/d &
+tftp localhost 10002 -c get files/a &
+tftp localhost 10002 -c get files/b &
+tftp localhost 10002 -c get files/c &
+tftp localhost 10002 -c get files/d &
 
 echo "waiting"
 
