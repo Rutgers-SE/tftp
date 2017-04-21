@@ -13,6 +13,7 @@
 
 #include "common.h"
 
+/* Defining status states for transfers */
 #define DONE 0
 #define PROGRESS 1
 #define NEW 2
@@ -20,40 +21,40 @@
 
 
 // start multiplexing globals
-fd_set rfds;
-struct timeval tv;
-int retval;
+fd_set rfds;                    /* read file descriptors set */
+struct timeval tv;              /* time value */
 // end multiplexing globals
 
 struct Transfer
 {
   int block_number;
-  char prev_block_content[512];
   char filename[256];
-  int port;
   int status;
   int mode;
 
-
-  /* S */
+  /* Server information */
   struct ConPair cp;
 
+/* Client information */
   SAI cinfo;
   int clen;
 };
 #define T struct Transfer
 
 struct Transfer transfers[MAXTRAN];
-int ts = 0;
-int te = MAXTRAN-1;
-void rotate()
+
+/**
+ * This block of code is used to emulate a queue for the transfer array.
+ */
+int ts = 0;                     /* transfer start index */
+int te = MAXTRAN-1;             /* transfer end index */
+void rotate()                   /* rotate the indices */
 {
   ts = (ts+1)%MAXTRAN;
   te = (te+1)%MAXTRAN;
 }
 
-
-
+/* reset all file transfers that are in progress or newly created. */
 void
 reset_fds()
 {
@@ -63,29 +64,17 @@ reset_fds()
       FD_SET(transfers[i].cp.descriptor, &rfds);
 }
 
-T*
-transfers_get(int port)
-{
-  rotate();
-  int i = ts;
-  while (((i+1)%MAXTRAN) != te)
-    {
-      if (transfers[i].cinfo.sin_port == port && (transfers[i].status == NEW || transfers[i].status == PROGRESS))
-        return (transfers+i);
-      i=(i+1)%MAXTRAN;
-    }
-  return NULL;
-}
 
+/**
+ * Returns the first Done transfer from the transfer list
+ */
 T*
 get_done_transfer()
 {
   int i;
   for (i=0; i<MAXTRAN; i++)
-    {
-      if (transfers[i].status == DONE)
-        return (transfers + i);
-    }
+    if (transfers[i].status == DONE)
+      return (transfers + i);
 
   return NULL;
 }
@@ -98,14 +87,14 @@ register_client_transfer(char filename[256], int mode, SAI cinfo, size_t len)
 {
   // generate a new random port number
   srand(time(NULL));
-  int new_port = (rand()%65535)+10000;
+  int new_port = (rand()%(65535-10000))+10000; /* generate an random port */
 
   T* t = get_done_transfer();   /* get a transfer struct that is marked as done. */
 
   t->cp = create_udp_socket(new_port); /* create a new socket for the transfer */
   bind(t->cp.descriptor, (SA*)&(t->cp.info), sizeof(t->cp.info));
 
-  // set potential useful information
+  // set potentially useful information
   strcpy(t->filename, filename);
   t->block_number=1;
   t->status=NEW;
@@ -115,6 +104,9 @@ register_client_transfer(char filename[256], int mode, SAI cinfo, size_t len)
   return t;
 }
 
+/**
+ * Get a ready transfer on the 'queue'
+ */
 T*
 get_ready_transfer()
 {
@@ -155,14 +147,15 @@ transfer_block(T* tfs)
     {
       printf("(%i\t%i)\t[DONE]\n", tfs->cp.descriptor, tfs->cinfo.sin_port);
       tfs->status = DONE;       /* mark transfer as done */
-      close(tfs->cp.descriptor);
-      FD_CLR(tfs->cp.descriptor, &rfds);
-      bzero(tfs, sizeof(*tfs));
-      fclose(f);
-      return -1;
+      close(tfs->cp.descriptor); /* close the udp port */
+      FD_CLR(tfs->cp.descriptor, &rfds); /* remove file descriptor from set */
+      bzero(tfs, sizeof(*tfs));          /* reset transfer struct to 0 */
+      fclose(f);                         /* close file */
+      return -1;                         /* return -1 for error */
     }
   fclose(f);
 
+  /* send the data package */
   if (send_data_packet(tfs->cp.descriptor,
                        tfs->block_number,
                        buf,
@@ -201,20 +194,20 @@ handle_read_request(int fd, char* command, int n, SAI cad, size_t len)
       return 1;
     }
 
-  // ntohs(cad.sin_port)
+  /* register client to transfer queue */
   int mode = get_mode(rrp.mode);
   T* t = register_client_transfer(rrp.filename,
                                   mode,
                                   cad,
                                   len);
 
-  if (t != NULL)
-    {
-      transfer_block(t);
-      return 0;
-    }
+  /* if t is null, there is an error. Return 1 */
+  if (t == NULL)
+    return 1;
 
-  return 1;
+  if (transfer_block(t) != 0)
+    return 1;                   /* if ret value not 0, there was an error */
+  return 0;
 }
 
 void
@@ -225,6 +218,7 @@ tftp_handler(int fd, struct sockaddr_in *sinfo, socklen_t clilen)
   // EVENT LOOP
   while (1)
     {
+      // need to reset values for set and time every iteration.
       FD_ZERO(&rfds);           /* reset the read set */
       FD_SET(fd, &rfds);        /* add the port 69 file descriptor */
       reset_fds();              /* reset current running transfer file descriptors */
@@ -236,6 +230,7 @@ tftp_handler(int fd, struct sockaddr_in *sinfo, socklen_t clilen)
       char command[MAXBUF];
 
 
+      // read from the first ready file descriptor
       T* t = get_ready_transfer();
       if (t == NULL)
         {
@@ -253,6 +248,7 @@ tftp_handler(int fd, struct sockaddr_in *sinfo, socklen_t clilen)
           command[n] = '\0';
         }
 
+      /* get the op code from the incoming request */
       uint16_t op = parse_op(command);
       if (op == OP_RRQ)
         { // handling a read request
@@ -263,10 +259,8 @@ tftp_handler(int fd, struct sockaddr_in *sinfo, socklen_t clilen)
         {
           if (t == NULL) continue;
           AKP akp;
-          parse_ack(&akp, command);
+          parse_ack(&akp, command); /* parse the incoming ack packet */
 
-          /* printf("ACK(%i)\t<--\t[]\n", */
-          /*        akp.block_number); */
           printf("ACK(%i)\t<--\t[FD(%i)\tPORT(%i)]\n",
                  akp.block_number,
                  fd,
